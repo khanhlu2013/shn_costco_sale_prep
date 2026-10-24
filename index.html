@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop Hoa Nắng · Sale Costco</title>
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
+  integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG"
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --text: #1f2430;
+    --muted: #5d6472;
+    --border: #d6d1c6;
+    --accent: #1c2a52;
+    --accent-text: #ffffff;
+    --accent-soft: #e8ecf6;
+    --done: #1d7a46;
+    --warn-bg: #fff4dd;
+    --warn-text: #6e4600;
+    --error-bg: #fde8e8;
+    --error-text: #8a1c1c;
+    --radius: 18px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14161b;
+      --surface: #1d2027;
+      --text: #eceef2;
+      --muted: #a3a9b5;
+      --border: #363a46;
+      --accent: #9db0ec;
+      --accent-text: #10131a;
+      --accent-soft: #232a3d;
+      --done: #5cc98a;
+      --warn-bg: #3a2e14;
+      --warn-text: #f3d18a;
+      --error-bg: #3d1d1d;
+      --error-text: #f4b4b4;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 18px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 1120px; margin: 0 auto; padding: 32px 16px 64px; }
+  header { text-align: center; margin-bottom: 24px; }
+  .brand { height: 88px; max-width: 240px; object-fit: contain; }
+  h1 { font-size: 2rem; line-height: 1.2; margin: 12px 0 6px; }
+  .lead { color: var(--muted); margin: 0; }
+
+  .visually-hidden {
+    position: absolute; width: 1px; height: 1px; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+
+  .dropzone {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 10px; min-height: 380px; padding: 32px 16px;
+    background: var(--surface); border: 3px dashed var(--border); border-radius: var(--radius);
+    text-align: center; cursor: pointer;
+    transition: border-color .15s, background-color .15s;
+  }
+  .dropzone:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .dropzone:focus-within { outline: 3px solid var(--accent); outline-offset: 4px; }
+  .dropzone svg { width: 76px; height: 76px; color: var(--accent); }
+  .dropzone strong { font-size: 1.6rem; }
+  .dropzone .button { margin-top: 10px; }
+  .hint { color: var(--muted); font-size: .95rem; }
+
+  button, .button {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-height: 48px; padding: 0 22px; border: 2px solid var(--accent); border-radius: 999px;
+    font: inherit; font-weight: 650; cursor: pointer;
+  }
+  .primary { background: var(--accent); color: var(--accent-text); }
+  .secondary { background: transparent; color: var(--accent); }
+  button:hover:not(:disabled) { filter: brightness(1.1); }
+  button:disabled { opacity: .5; cursor: default; }
+  button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .status { font-size: 1.1rem; font-weight: 650; margin: 0 0 8px; }
+  progress { width: 100%; height: 10px; accent-color: var(--accent); margin-bottom: 8px; }
+  .note { margin: 8px 0 0; padding: 10px 14px; border-radius: 12px; }
+  .note.warn { background: var(--warn-bg); color: var(--warn-text); }
+  .note.error { margin: 0 0 20px; background: var(--error-bg); color: var(--error-text); }
+
+  .editor { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; margin-top: 12px; }
+  @media (max-width: 820px) { .editor { grid-template-columns: 1fr; } }
+  .viewer {
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bg); border-radius: 14px; padding: 12px; min-height: 300px;
+  }
+  #preview { display: block; max-width: 100%; max-height: min(72vh, 860px); border-radius: 6px; }
+  .controls { display: flex; flex-direction: column; gap: 18px; }
+  .field { display: flex; flex-direction: column; gap: 6px; font-weight: 650; }
+  .field input {
+    font: inherit; font-weight: 500; padding: 12px 14px; min-height: 52px;
+    border: 2px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text);
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+  .counter { font-size: 1.3rem; font-weight: 700; margin: 0; }
+  .price-box { display: flex; align-items: center; gap: 8px; }
+  .price-box input { flex: 1; min-width: 0; font-size: 2rem; font-weight: 700; padding: 6px 14px; }
+  .price-box .suffix { font-size: 2rem; font-weight: 700; }
+  .nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .nav button { min-height: 56px; }
+  .actions { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .actions #save { min-height: 60px; font-size: 1.1rem; }
+
+  .strip {
+    display: flex; gap: 10px; overflow-x: auto; list-style: none;
+    margin: 20px 0 0; padding: 4px 4px 12px;
+  }
+  .strip button {
+    position: relative; display: block; width: 84px; min-height: 0; padding: 0;
+    border: 3px solid transparent; border-radius: 10px; background: none; color: inherit;
+  }
+  .strip button[aria-current="true"] { border-color: var(--accent); }
+  .strip img { display: block; width: 100%; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 7px; }
+  .strip .mini {
+    display: block; margin-top: 2px; font-size: .8rem; font-weight: 700; color: var(--muted);
+    text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .strip .priced .mini { color: var(--done); }
+  footer { margin-top: 32px; text-align: center; color: var(--muted); font-size: .9rem; }
+
+  .drop-overlay {
+    position: fixed; inset: 0; z-index: 10; display: none;
+    align-items: center; justify-content: center; pointer-events: none;
+    background: color-mix(in srgb, var(--accent) 88%, transparent);
+    color: var(--accent-text); font-size: 2rem; font-weight: 700;
+  }
+  body.dragging .drop-overlay { display: flex; }
+  /* While editing, a smaller header leaves more room for the photo. */
+  body.editing main { padding-top: 16px; }
+  body.editing header { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; }
+  body.editing .brand { height: 48px; }
+  body.editing h1 { font-size: 1.4rem; margin: 0; }
+  body.editing .lead, body.editing footer { display: none; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <img class="brand" src="logo.png" alt="">
+    <h1>Shop Hoa Nắng</h1>
+    <p class="lead">Chuẩn bị ảnh sale Costco: đóng dấu logo, ngày sale và giá lên ảnh.<br>
+      Ảnh không bị tải lên mạng, mọi thứ chỉ xử lý ngay trên máy này.</p>
+  </header>
+
+  <p id="error" class="note error" role="alert" hidden></p>
+
+  <label id="start" class="dropzone">
+    <input id="picker" class="visually-hidden" type="file" multiple accept="image/*,.heic,.heif">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+      stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="2"/><path d="m21 16-5-5-9 9"/>
+    </svg>
+    <strong>Kéo thả ảnh vào đây</strong>
+    <span class="hint">Một ảnh, nhiều ảnh, hay cả thư mục đều được</span>
+    <span class="button primary">Chọn ảnh</span>
+  </label>
+
+  <section id="work" class="panel" hidden>
+    <p id="status" class="status" aria-live="polite"></p>
+    <progress id="progress" value="0" max="1"></progress>
+    <p id="skipped" class="note warn" hidden></p>
+
+    <div class="editor">
+      <div class="viewer"><canvas id="preview" aria-label="Xem trước ảnh"></canvas></div>
+
+      <div class="controls">
+        <label class="field">
+          Ngày sale (in lên mọi ảnh)
+          <input id="date" type="text" placeholder="VD: Sale 23/10 – 2/11" autocomplete="off">
+        </label>
+
+        <p id="counter" class="counter"></p>
+        <label class="field">
+          Giá
+          <span class="price-box">
+            <input id="price" type="text" inputmode="numeric" autocomplete="off">
+            <span class="suffix">k</span>
+          </span>
+          <span class="hint">Nhấn Enter để sang ảnh tiếp</span>
+        </label>
+
+        <div class="nav">
+          <button id="prev" class="secondary" type="button">← Ảnh trước</button>
+          <button id="next" class="primary" type="button">Ảnh tiếp →</button>
+        </div>
+
+        <div class="actions">
+          <button id="save" class="primary" type="button" disabled>Lưu ảnh</button>
+          <button id="add" class="secondary" type="button">Thêm ảnh</button>
+          <button id="reset" class="secondary" type="button">Làm lại từ đầu</button>
+        </div>
+      </div>
+    </div>
+
+    <ol id="strip" class="strip" aria-label="Tất cả ảnh"></ol>
+  </section>
+
+  <footer>Mẹo: có thể kéo ảnh hoặc cả thư mục thả vào bất cứ chỗ nào trên trang.</footer>
+</main>
+<div class="drop-overlay" aria-hidden="true">Thả ra để thêm ảnh</div>
+
+<script>
+// ---- Watermark settings: change these numbers to adjust the look ----
+const LOGO_URL = "logo.png";
+const MAX_EDGE = 2048;          // longest side of each saved photo, in pixels (small photos are never enlarged)
+const JPEG_QUALITY = 0.9;       // 0 to 1
+const CORNER_SIZE = 0.45;       // corner logo width, as a share of the photo's shorter side
+const CORNER_OPACITY = 0.5;     // 0 = invisible, 1 = solid
+const CORNER_MARGIN = 0.03;     // gap from the right and bottom edges, as a share of the photo's shorter side
+const SHADOW_COLOR = "rgba(255, 255, 255, 0.6)"; // soft light glow: outlines the navy ring on dark photos
+const SHADOW_BLUR = 0.04;       // glow softness, as a share of the corner logo width
+const TILE_WIDTH = 0.12;        // faint background logo width, as a share of the photo width
+const TILE_OPACITY = 0.08;      // faint background strength
+const THUMB_EDGE = 360;         // thumbnail size in the strip
+
+// ---- Sale date (top-left) and price (top-right) settings ----
+const FONT_FAMILY = "Montserrat";
+const DATE_TEXT_SIZE = 0.045;   // sale-date letter size, as a share of the photo's shorter side
+const DATE_BG = "#1D2B40";      // banner color (the logo's navy)
+const DATE_COLOR = "#F3E6D0";   // text color (the logo's cream)
+const PRICE_TEXT_SIZE = 0.07;   // price letter size, as a share of the photo's shorter side
+const PRICE_BG = "#D9261C";     // tag color (red)
+const PRICE_COLOR = "#FFFFFF";  // text color
+const PRICE_SUFFIX = "k";       // added after whatever she types: 340 -> 340k
+const LABEL_MARGIN = 0.03;      // gap from the top and side edges, as a share of the photo's shorter side
+const LABEL_PADDING = 0.45;     // space inside a banner/tag, left and right, as a share of its letter size
+const LABEL_HEIGHT = 1.6;       // banner/tag height, as a multiple of its letter size
+const LABEL_RADIUS = 0.3;       // corner roundness, as a share of the banner/tag height
+const LABEL_SHADOW = "rgba(0, 0, 0, 0.3)"; // soft shadow under the banner and tag
+
+const PREVIEW_EDGE = 1400;      // on-screen preview size (the saved photo uses MAX_EDGE)
+const CLEAN_QUALITY = 0.95;     // quality of the clean copy kept in memory for each photo
+
+// Chrome can't open iPhone (HEIC) photos by itself; this reader is loaded only when one shows up.
+const HEIC_LIBRARY = {
+  src: "https://cdn.jsdelivr.net/npm/libheif-js@1.19.8/libheif-wasm/libheif-bundle.js",
+  integrity: "sha384-HXIRij9wEcFbMeYe8lcO83/544aNPhd8574RnlD/cQVbNPdq5iBkjgGPpxtsycNv",
+};
+const IMAGE_NAME = /\.(jpe?g|png|webp|gif|bmp|avif|heic|heif)$/i;
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  error: $("error"), start: $("start"), picker: $("picker"), work: $("work"),
+  status: $("status"), progress: $("progress"), skipped: $("skipped"),
+  preview: $("preview"), date: $("date"), counter: $("counter"), price: $("price"),
+  prev: $("prev"), next: $("next"),
+  save: $("save"), add: $("add"), reset: $("reset"), strip: $("strip"),
+};
+const state = {
+  queue: [], photos: [], skipped: [], urls: [], usedNames: new Map(),
+  total: 0, done: 0, busy: false, batch: 0,
+  current: -1, bitmap: null, saving: null, saved: true, atEnd: false,
+};
+
+const logoReady = loadLogo();
+logoReady.catch(() => showError(
+  "Không tải được file logo (logo.png). Nếu bạn mở trang này bằng cách bấm đúp vào file, " +
+  "hãy mở bằng địa chỉ web của trang."));
+
+async function loadLogo() {
+  const response = await fetch(LOGO_URL);
+  if (!response.ok) throw new Error(`logo.png: HTTP ${response.status}`);
+  return createImageBitmap(await response.blob());
+}
+
+// ---- Adding photos ----
+
+els.picker.addEventListener("change", () => {
+  addFiles([...els.picker.files]);
+  els.picker.value = "";
+});
+els.add.addEventListener("click", () => els.picker.click());
+
+let dragDepth = 0;
+const hasFiles = (event) => event.dataTransfer?.types.includes("Files");
+window.addEventListener("dragenter", (event) => {
+  if (!hasFiles(event)) return;
+  event.preventDefault();
+  dragDepth++;
+  document.body.classList.add("dragging");
+});
+window.addEventListener("dragover", (event) => {
+  if (hasFiles(event)) event.preventDefault();
+});
+window.addEventListener("dragleave", (event) => {
+  if (!hasFiles(event)) return;
+  if (--dragDepth <= 0) {
+    dragDepth = 0;
+    document.body.classList.remove("dragging");
+  }
+});
+window.addEventListener("drop", async (event) => {
+  event.preventDefault();
+  dragDepth = 0;
+  document.body.classList.remove("dragging");
+  addFiles(await filesFromDrop(event.dataTransfer));
+});
+
+// Collects files from a drop, including everything inside dropped folders.
+async function filesFromDrop(dataTransfer) {
+  // Entries must be read right away, before the drop event finishes.
+  const entries = [...dataTransfer.items].map((item) => item.webkitGetAsEntry?.()).filter(Boolean);
+  if (!entries.length) return [...dataTransfer.files];
+  const files = [];
+  async function walk(entry) {
+    if (entry.isFile) {
+      files.push(await new Promise((resolve, reject) => entry.file(resolve, reject)));
+    } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      let batch;
+      do {
+        batch = await new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+        for (const child of batch) await walk(child);
+      } while (batch.length);
+    }
+  }
+  for (const entry of entries) await walk(entry);
+  return files;
+}
+
+function addFiles(files) {
+  const images = [];
+  for (const file of files) {
+    if (file.name.startsWith(".")) continue; // hidden system files such as .DS_Store
+    if (file.type.startsWith("image/") || IMAGE_NAME.test(file.name)) images.push(file);
+    else state.skipped.push(file.name);
+  }
+  if (!images.length && !state.skipped.length) return;
+  state.queue.push(...images);
+  state.total += images.length;
+  els.start.hidden = true;
+  els.work.hidden = false;
+  render();
+  run();
+}
+
+// ---- Reading photos ----
+
+// Reads the queue one photo at a time: each photo is decoded once (HEIC included), shrunk to
+// MAX_EDGE and kept as a clean JPEG, so moving between photos later is fast.
+async function run() {
+  if (state.busy) return;
+  state.busy = true;
+  render();
+  const batch = state.batch;
+  while (state.queue.length && batch === state.batch) {
+    const file = state.queue.shift();
+    try {
+      const photo = await readPhoto(file);
+      if (batch !== state.batch) break;
+      addPhoto(file.name, photo);
+    } catch (error) {
+      console.error(file.name, error);
+      if (batch !== state.batch) break;
+      state.skipped.push(file.name);
+    }
+    state.done++;
+    render();
+  }
+  state.busy = false;
+  // "Start over" may have been pressed and new photos added while the last one was finishing.
+  if (state.queue.length) run();
+  else render();
+}
+
+async function readPhoto(file) {
+  const bitmap = await decode(file);
+  try {
+    const canvas = shrink(bitmap, MAX_EDGE);
+    const clean = await toJpeg(canvas, CLEAN_QUALITY);
+    const thumb = await toJpeg(shrink(canvas, THUMB_EDGE), 0.8);
+    canvas.width = canvas.height = 0; // free the memory right away
+    return { clean, thumb };
+  } finally {
+    bitmap.close();
+  }
+}
+
+async function decode(file) {
+  try {
+    return await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch (error) {
+    if (!(await isHeic(file))) throw error;
+  }
+  return decodeHeic(file);
+}
+
+async function decodeHeic(file) {
+  const decoder = await loadHeicReader();
+  const images = decoder.decode(new Uint8Array(await file.arrayBuffer()));
+  try {
+    const image = images[0];
+    if (!image) throw new Error("No picture inside the HEIC file");
+    const pixels = new ImageData(image.get_width(), image.get_height());
+    await new Promise((resolve, reject) => image.display(pixels,
+      (result) => (result ? resolve() : reject(new Error("Couldn't read the HEIC file")))));
+    return await createImageBitmap(pixels);
+  } finally {
+    images.forEach((img) => img.free());
+  }
+}
+
+async function isHeic(file) {
+  if (/\.hei[cf]$/i.test(file.name) || /hei[cf]/i.test(file.type)) return true;
+  const head = new TextDecoder().decode(await file.slice(4, 12).arrayBuffer());
+  return /^ftyp(hei[cxms]|hev[cx]|mif1|msf1)/.test(head);
+}
+
+// One reader is reused for every HEIC photo; photos are read one at a time, so they never overlap.
+let heicReader = null;
+function loadHeicReader() {
+  heicReader ??= new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    Object.assign(script, { src: HEIC_LIBRARY.src, integrity: HEIC_LIBRARY.integrity, crossOrigin: "anonymous" });
+    script.onload = () => resolve(new (window.libheif().HeifDecoder)());
+    script.onerror = () => {
+      heicReader = null;
+      script.remove();
+      reject(new Error("Couldn't load the HEIC reader"));
+    };
+    document.head.append(script);
+  });
+  return heicReader;
+}
+
+function addPhoto(originalName, { clean, thumb }) {
+  const photo = { name: outputName(originalName), clean, price: "" };
+  state.photos.push(photo);
+  state.saved = false;
+
+  const button = document.createElement("button");
+  button.type = "button";
+  const img = document.createElement("img");
+  img.src = objectUrl(thumb);
+  img.alt = "";
+  const mini = document.createElement("span");
+  mini.className = "mini";
+  button.append(img, mini);
+  const index = state.photos.length - 1;
+  button.addEventListener("click", () => show(index));
+  const item = document.createElement("li");
+  item.append(button);
+  els.strip.append(item);
+  photo.item = item;
+  updateStripItem(photo, index);
+
+  if (state.current < 0) show(0);
+}
+
+// ---- Drawing ----
+
+// Draws a photo with every stamp: faint logos, corner logo, sale date and price.
+// The preview and the saved photo both use this, so what she sees is what gets saved.
+async function compose(canvas, bitmap, maxEdge, dateText, priceText) {
+  composeNow(canvas, bitmap, await prepare(dateText, priceText), maxEdge, dateText, priceText);
+  return canvas;
+}
+
+// Waits for the logo and the font letters needed, and returns the logo.
+async function prepare(dateText, priceText) {
+  const logo = await logoReady;
+  await loadFonts(dateText, priceText);
+  return logo;
+}
+
+function composeNow(canvas, bitmap, logo, maxEdge, dateText, priceText) {
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+  canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  drawWatermark(ctx, canvas.width, canvas.height, logo);
+  drawLabels(ctx, canvas.width, canvas.height, dateText, priceText);
+}
+
+function drawWatermark(ctx, w, h, logo) {
+  const ratio = logo.height / logo.width;
+  ctx.save();
+
+  // Faint background: the logo repeated in staggered rows across the whole photo.
+  const tileW = w * TILE_WIDTH;
+  const tileH = tileW * ratio;
+  const stepX = tileW * 2;
+  const stepY = tileH + tileW * 0.6;
+  ctx.globalAlpha = TILE_OPACITY;
+  for (let row = 0; row * stepY - tileH / 2 < h; row++) {
+    const y = row * stepY - tileH / 2;
+    for (let x = (row % 2 ? stepX / 2 : 0) - tileW / 2; x < w; x += stepX) {
+      ctx.drawImage(logo, x, y, tileW, tileH);
+    }
+  }
+
+  // Corner logo, bottom-right, with a soft glow so it reads on any background.
+  // Sized from the shorter side so a big logo covers the same share of portrait and landscape photos.
+  const shortSide = Math.min(w, h);
+  const cornerW = shortSide * CORNER_SIZE;
+  const cornerH = cornerW * ratio;
+  const margin = shortSide * CORNER_MARGIN;
+  ctx.globalAlpha = CORNER_OPACITY;
+  ctx.shadowColor = SHADOW_COLOR;
+  ctx.shadowBlur = cornerW * SHADOW_BLUR;
+  ctx.drawImage(logo, w - margin - cornerW, h - margin - cornerH, cornerW, cornerH);
+  ctx.restore();
+}
+
+// Price tag top-right; sale-date banner top-left, fitted so it never runs into the tag.
+function drawLabels(ctx, w, h, dateText, priceText) {
+  const shortSide = Math.min(w, h);
+  const margin = shortSide * LABEL_MARGIN;
+  let priceTag = null;
+  if (priceText) {
+    priceTag = layoutTag(ctx, priceText, shortSide * PRICE_TEXT_SIZE, 800, w - margin * 2);
+    priceTag.left = w - margin - priceTag.width;
+    priceTag.top = margin;
+    drawTag(ctx, priceTag, PRICE_BG, PRICE_COLOR);
+  }
+  if (dateText) {
+    const space = (priceTag ? priceTag.left - margin : w - margin) - margin;
+    const banner = layoutTag(ctx, dateText, shortSide * DATE_TEXT_SIZE, 700, space);
+    banner.left = margin;
+    // Line the banner up with the middle of the price tag when there is one and it isn't taller.
+    banner.top = priceTag && banner.height <= priceTag.height
+      ? priceTag.top + (priceTag.height - banner.height) / 2 : margin;
+    drawTag(ctx, banner, DATE_BG, DATE_COLOR);
+  }
+}
+
+// Works out the letter size and lines for a banner/tag so it fits in maxWidth: the text shrinks,
+// and a long line is split in two when that keeps the letters noticeably bigger.
+function layoutTag(ctx, text, size, weight, maxWidth) {
+  const font = (px) => `${weight} ${px}px ${FONT_FAMILY}, system-ui, sans-serif`;
+  ctx.font = font(100);
+  const widthPer = (line) => ctx.measureText(line).width / 100 + LABEL_PADDING * 2; // box width per unit of letter size
+  const fit = (lines) => Math.min(size, maxWidth / Math.max(...lines.map(widthPer)));
+
+  let lines = [text];
+  let best = fit(lines);
+  const middle = text.length / 2;
+  const split = [...text.matchAll(/ /g)].map((m) => m.index)
+    .sort((a, b) => Math.abs(a - middle) - Math.abs(b - middle))[0];
+  if (best < size && split !== undefined) {
+    const two = [text.slice(0, split), text.slice(split + 1)];
+    if (fit(two) > best * 1.15) {
+      lines = two;
+      best = fit(two);
+    }
+  }
+  const letters = Math.max(size * 0.25, best);
+  const lineGap = letters * 1.25;
+  return {
+    lines, weight, font: font(letters), size: letters, lineGap,
+    width: Math.min(maxWidth, letters * Math.max(...lines.map(widthPer))),
+    height: letters * LABEL_HEIGHT + lineGap * (lines.length - 1),
+  };
+}
+
+// Draws a laid-out banner/tag: a rounded box with its text centered inside.
+function drawTag(ctx, tag, background, color) {
+  const { left, top, width, height, lines, size, lineGap } = tag;
+  ctx.save();
+  ctx.shadowColor = LABEL_SHADOW;
+  ctx.shadowBlur = size * LABEL_HEIGHT * 0.25;
+  ctx.shadowOffsetY = size * LABEL_HEIGHT * 0.06;
+  ctx.fillStyle = background;
+  ctx.beginPath();
+  ctx.roundRect(left, top, width, height, size * LABEL_HEIGHT * LABEL_RADIUS);
+  ctx.fill();
+
+  ctx.shadowColor = "transparent";
+  ctx.clip(); // extremely long text gets cut off at the box edge rather than covering the price
+  ctx.font = tag.font;
+  ctx.fillStyle = color;
+  ctx.textBaseline = "alphabetic";
+  // Center the actual letters (accents included) on each line.
+  const metrics = ctx.measureText(lines.join(" "));
+  const shift = (metrics.actualBoundingBoxAscent - metrics.actualBoundingBoxDescent) / 2;
+  lines.forEach((line, i) => {
+    ctx.fillText(line, left + size * LABEL_PADDING, top + (size * LABEL_HEIGHT) / 2 + i * lineGap + shift);
+  });
+  ctx.restore();
+}
+
+// Makes sure Montserrat (with the Vietnamese letters actually used) is ready before drawing.
+async function loadFonts(dateText, priceText) {
+  try {
+    await Promise.all([
+      document.fonts.load(`700 40px ${FONT_FAMILY}`, dateText || "Sale"),
+      document.fonts.load(`800 40px ${FONT_FAMILY}`, priceText || "0k"),
+    ]);
+  } catch {
+    // No internet: the system bold font is used instead.
+  }
+}
+
+// Copies an image onto a new canvas whose longest side is at most maxEdge.
+function shrink(source, maxEdge) {
+  const scale = Math.min(1, maxEdge / Math.max(source.width, source.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.round(source.width * scale));
+  canvas.height = Math.max(1, Math.round(source.height * scale));
+  const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingQuality = "high";
+  ctx.fillStyle = "#fff"; // see-through PNGs get a white background instead of black
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas;
+}
+
+// Uses toDataURL rather than toBlob: Chrome delays toBlob by about a second per photo
+// whenever the tab isn't on screen, which adds up over a big batch.
+async function toJpeg(canvas, quality) {
+  const response = await fetch(canvas.toDataURL("image/jpeg", quality));
+  return response.blob();
+}
+
+const dateText = () => els.date.value.trim();
+const priceText = (photo) => (photo.price.trim() ? photo.price.trim() + PRICE_SUFFIX : "");
+
+// ---- Editor: one photo at a time ----
+
+let showToken = 0;
+async function show(index) {
+  if (!state.photos.length) return;
+  index = Math.max(0, Math.min(index, state.photos.length - 1));
+  state.current = index;
+  state.atEnd = false;
+  const photo = state.photos[index];
+  els.price.value = photo.price;
+  render();
+  els.strip.children[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  els.price.focus();
+  els.price.select();
+
+  const token = ++showToken;
+  const bitmap = await createImageBitmap(photo.clean);
+  if (token !== showToken) return bitmap.close();
+  state.bitmap?.close();
+  state.bitmap = bitmap;
+  drawPreview();
+}
+
+// Redraws the preview, combining quick bursts of changes into one redraw.
+let previewQueued = false;
+function drawPreview() {
+  if (previewQueued) return;
+  previewQueued = true;
+  setTimeout(async () => {
+    previewQueued = false;
+    const photo = state.photos[state.current];
+    if (!photo || !state.bitmap) return;
+    const date = dateText();
+    const price = priceText(photo);
+    const logo = await prepare(date, price);
+    // She may have moved to another photo or kept typing while the font loaded: draw only what's current.
+    const now = state.photos[state.current];
+    if (!now || !state.bitmap) return;
+    if (dateText() !== date || priceText(now) !== price) return drawPreview();
+    composeNow(els.preview, state.bitmap, logo, PREVIEW_EDGE, date, price);
+  }, 0);
+}
+
+function goNext() {
+  if (state.current < state.photos.length - 1) return show(state.current + 1);
+  state.atEnd = true;
+  render();
+  if (!state.busy) els.save.focus();
+}
+
+els.date.addEventListener("input", () => {
+  state.saved = false;
+  drawPreview();
+});
+els.date.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") els.price.focus();
+});
+els.price.addEventListener("input", () => {
+  const photo = state.photos[state.current];
+  if (!photo) return;
+  photo.price = els.price.value;
+  state.saved = false;
+  updateStripItem(photo, state.current);
+  render();
+  drawPreview();
+});
+els.price.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    goNext();
+  }
+});
+els.prev.addEventListener("click", () => show(state.current - 1));
+els.next.addEventListener("click", goNext);
+
+function updateStripItem(photo, index) {
+  const label = priceText(photo);
+  photo.item.classList.toggle("priced", Boolean(label));
+  photo.item.querySelector(".mini").textContent = label ? `✓ ${label}` : `${index + 1}`;
+}
+
+// IMG_1234.HEIC -> IMG_1234-watermarked.jpg; repeats get (2), (3)...
+function outputName(originalName) {
+  const base = originalName.replace(/\.[^.]+$/, "") || "photo";
+  const key = base.toLowerCase(); // Mac file names ignore upper/lower case
+  const count = (state.usedNames.get(key) || 0) + 1;
+  state.usedNames.set(key, count);
+  return count === 1 ? `${base}-watermarked.jpg` : `${base}-watermarked (${count}).jpg`;
+}
+
+function objectUrl(blob) {
+  const url = URL.createObjectURL(blob);
+  state.urls.push(url);
+  return url;
+}
+
+// ---- Saving ----
+
+// Draws every photo at full size with the current date and its price, then saves.
+els.save.addEventListener("click", async () => {
+  const photos = [...state.photos];
+  const date = dateText();
+  const outputs = [];
+  state.saving = { done: 0, total: photos.length };
+  render();
+  try {
+    const canvas = document.createElement("canvas");
+    for (const photo of photos) {
+      const bitmap = await createImageBitmap(photo.clean);
+      await compose(canvas, bitmap, MAX_EDGE, date, priceText(photo));
+      bitmap.close();
+      outputs.push({ name: photo.name, blob: await toJpeg(canvas, JPEG_QUALITY) });
+      state.saving.done++;
+      render();
+    }
+    canvas.width = canvas.height = 0;
+    if (outputs.length === 1) {
+      download(outputs[0].blob, outputs[0].name);
+    } else {
+      const zip = new JSZip();
+      for (const { name, blob } of outputs) zip.file(name, blob);
+      // Photos are already compressed, so "STORE" just packs them, which is much faster.
+      download(await zip.generateAsync({ type: "blob", compression: "STORE" }), `costco-sale-${today()}.zip`);
+    }
+    state.saved = true;
+  } catch (error) {
+    console.error(error);
+    showError("Có lỗi khi lưu ảnh. Vui lòng thử lại.");
+  } finally {
+    state.saving = null;
+    render();
+  }
+});
+
+function download(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const link = Object.assign(document.createElement("a"), { href: url, download: name });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
+function today() {
+  const d = new Date();
+  return [d.getFullYear(), d.getMonth() + 1, d.getDate()].map((n) => String(n).padStart(2, "0")).join("-");
+}
+
+// ---- Start over, warnings, and screen updates ----
+
+els.reset.addEventListener("click", () => {
+  state.batch++;
+  state.queue.length = 0;
+  state.photos = [];
+  state.skipped = [];
+  state.usedNames.clear();
+  state.total = state.done = 0;
+  state.current = -1;
+  state.atEnd = false;
+  state.saved = true;
+  state.bitmap?.close();
+  state.bitmap = null;
+  showToken++;
+  state.urls.forEach((url) => URL.revokeObjectURL(url));
+  state.urls = [];
+  els.strip.replaceChildren();
+  els.date.value = "";
+  els.price.value = "";
+  els.preview.width = els.preview.height = 0;
+  els.work.hidden = true;
+  els.start.hidden = false;
+  render();
+});
+
+// Warn before closing the page if the photos haven't been saved yet.
+window.addEventListener("beforeunload", (event) => {
+  if (!state.saved && state.photos.length) event.preventDefault();
+});
+
+function showError(message) {
+  els.error.textContent = message;
+  els.error.hidden = false;
+}
+
+function render() {
+  const { busy, saving, total, done, photos, skipped, current, atEnd } = state;
+  const count = photos.length;
+  const priced = photos.filter((photo) => photo.price.trim()).length;
+
+  els.progress.hidden = !busy && !saving;
+  els.progress.max = saving ? saving.total : Math.max(total, 1);
+  els.progress.value = saving ? saving.done : done;
+  if (saving) els.status.textContent = `Đang lưu ảnh ${Math.min(saving.done + 1, saving.total)} / ${saving.total}…`;
+  else if (busy) els.status.textContent = `Đang đọc ảnh ${Math.min(done + 1, total)} / ${total}…`;
+  else if (atEnd) els.status.textContent = `Đã đến ảnh cuối (${priced} / ${count} ảnh có giá). Kiểm tra lại rồi bấm Lưu.`;
+  else if (count) els.status.textContent = `${count} ảnh · ${priced} ảnh đã có giá`;
+  else els.status.textContent = "Không có ảnh nào mở được.";
+
+  document.body.classList.toggle("editing", !els.work.hidden);
+  els.counter.textContent = count ? `Ảnh ${current + 1} / ${count}` : "";
+  els.prev.disabled = current <= 0;
+  els.next.disabled = els.price.disabled = !count;
+  [...els.strip.children].forEach((item, i) => {
+    item.firstChild.setAttribute("aria-current", String(i === current));
+  });
+
+  els.save.disabled = busy || Boolean(saving) || !count;
+  els.save.textContent = saving ? "Đang lưu…" : count > 1 ? `Lưu cả ${count} ảnh (file zip)` : "Lưu ảnh";
+
+  els.skipped.hidden = !skipped.length;
+  if (skipped.length) {
+    const names = skipped.length <= 5 ? skipped.join(", ")
+      : `${skipped.slice(0, 5).join(", ")} và ${skipped.length - 5} file khác`;
+    els.skipped.textContent = `Bỏ qua ${skipped.length} file không mở được: ${names}`;
+  }
+}
+</script>
+</body>
+</html>
