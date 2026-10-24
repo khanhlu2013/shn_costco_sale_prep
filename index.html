@@ -7,7 +7,7 @@
 <link rel="icon" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap">
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"
   integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG"
   crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -108,7 +108,11 @@
     font: inherit; font-weight: 500; padding: 12px 14px; min-height: 52px;
     border: 2px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text);
   }
-  .field input:focus { outline: none; border-color: var(--accent); }
+  .field textarea {
+    font: inherit; font-weight: 500; line-height: 1.4; padding: 10px 14px; min-height: 120px; resize: vertical;
+    border: 2px solid var(--border); border-radius: 12px; background: var(--surface); color: var(--text);
+  }
+  .field input:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
   .counter { font-size: 1.3rem; font-weight: 700; margin: 0; }
   .price-box { display: flex; align-items: center; gap: 8px; }
   .price-box input { flex: 1; min-width: 0; font-size: 2rem; font-weight: 700; padding: 6px 14px; }
@@ -197,6 +201,12 @@
           <span class="hint">Nhấn Enter để sang ảnh tiếp</span>
         </label>
 
+        <label class="field">
+          Ghi chú (góc dưới bên trái)
+          <textarea id="note" rows="4" placeholder="VD: Lọ 300 viên&#10;Dành cho phụ nữ trên 50 tuổi"></textarea>
+          <span class="hint">Enter để xuống dòng · ⌘ + Enter để sang ảnh tiếp</span>
+        </label>
+
         <div class="nav">
           <button id="prev" class="secondary" type="button">← Ảnh trước</button>
           <button id="next" class="primary" type="button">Ảnh tiếp →</button>
@@ -222,7 +232,7 @@
 const LOGO_URL = "logo.png";
 const MAX_EDGE = 2048;          // longest side of each saved photo, in pixels (small photos are never enlarged)
 const JPEG_QUALITY = 0.9;       // 0 to 1
-const CORNER_SIZE = 0.45;       // corner logo width, as a share of the photo's shorter side
+const CORNER_SIZE = 0.36;       // corner logo width, as a share of the photo's shorter side
 const CORNER_OPACITY = 0.5;     // 0 = invisible, 1 = solid
 const CORNER_MARGIN = 0.03;     // gap from the right and bottom edges, as a share of the photo's shorter side
 const SHADOW_COLOR = "rgba(255, 255, 255, 0.6)"; // soft light glow: outlines the navy ring on dark photos
@@ -231,20 +241,34 @@ const TILE_WIDTH = 0.12;        // faint background logo width, as a share of th
 const TILE_OPACITY = 0.08;      // faint background strength
 const THUMB_EDGE = 360;         // thumbnail size in the strip
 
-// ---- Sale date (top-left) and price (top-right) settings ----
+// ---- Sale date (top-left) and price (middle-left) settings ----
 const FONT_FAMILY = "Montserrat";
 const DATE_TEXT_SIZE = 0.045;   // sale-date letter size, as a share of the photo's shorter side
 const DATE_BG = "#1D2B40";      // banner color (the logo's navy)
 const DATE_COLOR = "#F3E6D0";   // text color (the logo's cream)
-const PRICE_TEXT_SIZE = 0.07;   // price letter size, as a share of the photo's shorter side
-const PRICE_BG = "#D9261C";     // tag color (red)
-const PRICE_COLOR = "#FFFFFF";  // text color
+// The price sits big in the middle-left of the photo (not in a corner) so it still shows when
+// Facebook crops photos into its grid: people see prices without opening each photo.
+const PRICE_STYLE = "text";     // "text" = big red numbers; "tag" = white numbers on a red tag
+const PRICE_HEIGHT = 0.15;      // price letter height, as a share of the photo's shorter side
+const PRICE_LEFT = 0.10;        // left edge of the price, as a share of the photo width
+const PRICE_TOP = 0.32;         // top of the price letters, as a share of the photo height
+const PRICE_COLOR = "#F43E3C";  // red of the numbers (or of the tag, for "tag")
+const PRICE_TAG_TEXT = "#FFFFFF"; // number color on the tag (only for "tag")
+const PRICE_SPACING = -0.05;    // space between the numbers, as a share of the letter size (negative = tighter)
+const PRICE_OUTLINE = 0;        // white edge around the numbers, as a share of the letter size (0 = none, try 0.04)
+const PRICE_SHADOW = "rgba(0, 0, 0, 0.25)"; // soft shadow that helps on busy backgrounds
 const PRICE_SUFFIX = "k";       // added after whatever she types: 340 -> 340k
 const LABEL_MARGIN = 0.03;      // gap from the top and side edges, as a share of the photo's shorter side
 const LABEL_PADDING = 0.45;     // space inside a banner/tag, left and right, as a share of its letter size
 const LABEL_HEIGHT = 1.6;       // banner/tag height, as a multiple of its letter size
 const LABEL_RADIUS = 0.3;       // corner roundness, as a share of the banner/tag height
 const LABEL_SHADOW = "rgba(0, 0, 0, 0.3)"; // soft shadow under the banner and tag
+
+// ---- Message (bottom-left, different for each photo) ----
+const NOTE_TEXT_SIZE = 0.035;   // letter size, as a share of the photo's shorter side (the date is 0.045)
+const NOTE_BG = "#1D2B40";      // box color (same navy as the date banner)
+const NOTE_COLOR = "#F3E6D0";   // text color (same cream as the date banner)
+const NOTE_MAX_LINES = 5;       // longer messages get smaller letters, then are cut off with "…"
 
 const PREVIEW_EDGE = 1400;      // on-screen preview size (the saved photo uses MAX_EDGE)
 const CLEAN_QUALITY = 0.95;     // quality of the clean copy kept in memory for each photo
@@ -260,7 +284,7 @@ const $ = (id) => document.getElementById(id);
 const els = {
   error: $("error"), start: $("start"), picker: $("picker"), work: $("work"),
   status: $("status"), progress: $("progress"), skipped: $("skipped"),
-  preview: $("preview"), date: $("date"), counter: $("counter"), price: $("price"),
+  preview: $("preview"), date: $("date"), counter: $("counter"), price: $("price"), note: $("note"),
   prev: $("prev"), next: $("next"),
   save: $("save"), add: $("add"), reset: $("reset"), strip: $("strip"),
 };
@@ -442,7 +466,7 @@ function loadHeicReader() {
 }
 
 function addPhoto(originalName, { clean, thumb }) {
-  const photo = { name: outputName(originalName), clean, price: "" };
+  const photo = { name: outputName(originalName), clean, price: "", note: "" };
   state.photos.push(photo);
   state.saved = false;
 
@@ -467,21 +491,22 @@ function addPhoto(originalName, { clean, thumb }) {
 
 // ---- Drawing ----
 
-// Draws a photo with every stamp: faint logos, corner logo, sale date and price.
-// The preview and the saved photo both use this, so what she sees is what gets saved.
-async function compose(canvas, bitmap, maxEdge, dateText, priceText) {
-  composeNow(canvas, bitmap, await prepare(dateText, priceText), maxEdge, dateText, priceText);
+// Draws a photo with every stamp: faint logos, corner logo, sale date, price and message.
+// `labels` is { date, price, note }. The preview and the saved photo both use this,
+// so what she sees is what gets saved.
+async function compose(canvas, bitmap, maxEdge, labels) {
+  composeNow(canvas, bitmap, await prepare(labels), maxEdge, labels);
   return canvas;
 }
 
 // Waits for the logo and the font letters needed, and returns the logo.
-async function prepare(dateText, priceText) {
+async function prepare(labels) {
   const logo = await logoReady;
-  await loadFonts(dateText, priceText);
+  await loadFonts(labels);
   return logo;
 }
 
-function composeNow(canvas, bitmap, logo, maxEdge, dateText, priceText) {
+function composeNow(canvas, bitmap, logo, maxEdge, labels) {
   const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
   canvas.width = Math.max(1, Math.round(bitmap.width * scale));
   canvas.height = Math.max(1, Math.round(bitmap.height * scale));
@@ -489,7 +514,7 @@ function composeNow(canvas, bitmap, logo, maxEdge, dateText, priceText) {
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   drawWatermark(ctx, canvas.width, canvas.height, logo);
-  drawLabels(ctx, canvas.width, canvas.height, dateText, priceText);
+  drawLabels(ctx, canvas.width, canvas.height, labels);
 }
 
 function drawWatermark(ctx, w, h, logo) {
@@ -522,26 +547,123 @@ function drawWatermark(ctx, w, h, logo) {
   ctx.restore();
 }
 
-// Price tag top-right; sale-date banner top-left, fitted so it never runs into the tag.
-function drawLabels(ctx, w, h, dateText, priceText) {
+// Sale-date banner top-left; big price in the middle-left; message bottom-left.
+function drawLabels(ctx, w, h, { date, price, note }) {
   const shortSide = Math.min(w, h);
   const margin = shortSide * LABEL_MARGIN;
-  let priceTag = null;
-  if (priceText) {
-    priceTag = layoutTag(ctx, priceText, shortSide * PRICE_TEXT_SIZE, 800, w - margin * 2);
-    priceTag.left = w - margin - priceTag.width;
-    priceTag.top = margin;
-    drawTag(ctx, priceTag, PRICE_BG, PRICE_COLOR);
-  }
-  if (dateText) {
-    const space = (priceTag ? priceTag.left - margin : w - margin) - margin;
-    const banner = layoutTag(ctx, dateText, shortSide * DATE_TEXT_SIZE, 700, space);
+  if (date) {
+    const banner = layoutTag(ctx, date, shortSide * DATE_TEXT_SIZE, 700, w - margin * 2);
     banner.left = margin;
-    // Line the banner up with the middle of the price tag when there is one and it isn't taller.
-    banner.top = priceTag && banner.height <= priceTag.height
-      ? priceTag.top + (priceTag.height - banner.height) / 2 : margin;
+    banner.top = margin;
     drawTag(ctx, banner, DATE_BG, DATE_COLOR);
   }
+  if (price) drawPrice(ctx, w, h, price, margin);
+  if (note) {
+    // Stay left of the corner logo (unless the logo is so big there'd be no room).
+    const logoLeft = w - shortSide * (CORNER_MARGIN + CORNER_SIZE);
+    const space = Math.max(logoLeft - margin * 1.5, w * 0.45);
+    const box = layoutNote(ctx, note, shortSide * NOTE_TEXT_SIZE, space);
+    box.left = margin;
+    box.top = h - margin - box.height;
+    drawTag(ctx, box, NOTE_BG, NOTE_COLOR);
+  }
+}
+
+// Lays out the message: keeps her line breaks, wraps long lines to fit, and makes the letters
+// smaller (down to 60%) if it would otherwise run past NOTE_MAX_LINES lines.
+function layoutNote(ctx, text, size, maxWidth) {
+  const font = (px) => `700 ${px}px ${FONT_FAMILY}, system-ui, sans-serif`;
+  let letters = size;
+  let lines = [];
+  for (let step = 0; step < 5; step++) {
+    letters = size * (1 - step * 0.1);
+    ctx.font = font(letters);
+    lines = wrapLines(ctx, text, maxWidth - letters * LABEL_PADDING * 2);
+    if (lines.length <= NOTE_MAX_LINES) break;
+  }
+  if (lines.length > NOTE_MAX_LINES) {
+    lines = lines.slice(0, NOTE_MAX_LINES);
+    lines[NOTE_MAX_LINES - 1] += " …";
+  }
+  const textWidth = Math.max(...lines.map((line) => ctx.measureText(line).width));
+  const lineGap = letters * 1.25;
+  return {
+    lines, font: font(letters), size: letters, lineGap,
+    width: Math.min(maxWidth, textWidth + letters * LABEL_PADDING * 2),
+    height: letters * LABEL_HEIGHT + lineGap * (lines.length - 1),
+  };
+}
+
+// Splits text into lines no wider than maxWidth (using the current font), keeping her line breaks.
+function wrapLines(ctx, text, maxWidth) {
+  const lines = [];
+  for (const paragraph of text.split("\n")) {
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    if (!words.length) {
+      lines.push("");
+      continue;
+    }
+    const wrapped = [];
+    let line = words[0];
+    for (const word of words.slice(1)) {
+      if (ctx.measureText(`${line} ${word}`).width <= maxWidth) line += ` ${word}`;
+      else {
+        wrapped.push(line);
+        line = word;
+      }
+    }
+    wrapped.push(line);
+    // Don't leave one word alone on the last line: bring a word down from the line above.
+    const n = wrapped.length;
+    if (n > 1 && !wrapped[n - 1].includes(" ") && wrapped[n - 2].split(" ").length > 2) {
+      const cut = wrapped[n - 2].lastIndexOf(" ");
+      wrapped[n - 1] = `${wrapped[n - 2].slice(cut + 1)} ${wrapped[n - 1]}`;
+      wrapped[n - 2] = wrapped[n - 2].slice(0, cut);
+    }
+    lines.push(...wrapped);
+  }
+  return lines;
+}
+
+function drawPrice(ctx, w, h, text, margin) {
+  const weight = PRICE_STYLE === "tag" ? 800 : 900;
+  const font = (px) => `${weight} ${px}px ${FONT_FAMILY}, system-ui, sans-serif`;
+  ctx.save();
+  ctx.font = font(100);
+  const probe = ctx.measureText(text);
+  const inkPer = probe.actualBoundingBoxAscent / 100; // letter height per pixel of font size
+  const left = w * PRICE_LEFT;
+  const room = w - left - margin; // a long price shrinks so it stays on the photo
+  const top = h * PRICE_TOP;
+  let size = (Math.min(w, h) * PRICE_HEIGHT) / inkPer;
+
+  if (PRICE_STYLE === "tag") {
+    const tag = layoutTag(ctx, text, size, weight, room);
+    tag.left = left;
+    tag.top = top - (tag.height - inkPer * tag.size) / 2; // letters land at PRICE_TOP
+    drawTag(ctx, tag, PRICE_COLOR, PRICE_TAG_TEXT);
+  } else {
+    ctx.letterSpacing = `${PRICE_SPACING * 100}px`;
+    const spaced = ctx.measureText(text);
+    size = Math.min(size, room / (spaced.width / 100));
+    ctx.font = font(size);
+    ctx.letterSpacing = `${PRICE_SPACING * size}px`;
+    const baseline = top + inkPer * size;
+    const x = left + (spaced.actualBoundingBoxLeft * size) / 100; // the first number's ink starts exactly at PRICE_LEFT
+    ctx.lineJoin = "round";
+    ctx.shadowColor = PRICE_SHADOW;
+    ctx.shadowBlur = size * 0.08;
+    ctx.shadowOffsetY = size * 0.02;
+    if (PRICE_OUTLINE > 0) {
+      ctx.lineWidth = size * PRICE_OUTLINE * 2; // half of the stroke ends up hidden under the letters
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.strokeText(text, x, baseline);
+      ctx.shadowColor = "transparent";
+    }
+    ctx.fillStyle = PRICE_COLOR;
+    ctx.fillText(text, x, baseline);
+  }
+  ctx.restore();
 }
 
 // Works out the letter size and lines for a banner/tag so it fits in maxWidth: the text shrinks,
@@ -600,11 +722,11 @@ function drawTag(ctx, tag, background, color) {
 }
 
 // Makes sure Montserrat (with the Vietnamese letters actually used) is ready before drawing.
-async function loadFonts(dateText, priceText) {
+async function loadFonts({ date, price, note }) {
   try {
     await Promise.all([
-      document.fonts.load(`700 40px ${FONT_FAMILY}`, dateText || "Sale"),
-      document.fonts.load(`800 40px ${FONT_FAMILY}`, priceText || "0k"),
+      document.fonts.load(`700 40px ${FONT_FAMILY}`, `${date} ${note}`.trim() || "Sale"),
+      document.fonts.load(`${PRICE_STYLE === "tag" ? 800 : 900} 40px ${FONT_FAMILY}`, price || "0k"),
     ]);
   } catch {
     // No internet: the system bold font is used instead.
@@ -633,7 +755,18 @@ async function toJpeg(canvas, quality) {
 }
 
 const dateText = () => els.date.value.trim();
-const priceText = (photo) => (photo.price.trim() ? photo.price.trim() + PRICE_SUFFIX : "");
+const labelsFor = (photo) => ({ date: dateText(), price: priceText(photo), note: photo.note.trim() });
+
+// Whole numbers get Vietnamese thousand dots, then the suffix: 1234 -> 1.234k.
+// Anything that isn't a plain number is kept exactly as she typed it.
+function priceText(photo) {
+  let typed = photo.price.trim();
+  if (typed.toLowerCase().endsWith(PRICE_SUFFIX.toLowerCase())) typed = typed.slice(0, -PRICE_SUFFIX.length).trim(); // "340k" -> not "340kk"
+  if (!typed) return "";
+  const digits = typed.replace(/[.,\s]/g, "");
+  const shown = /^\d+$/.test(digits) ? digits.replace(/\B(?=(\d{3})+(?!\d))/g, ".") : typed;
+  return shown + PRICE_SUFFIX;
+}
 
 // ---- Editor: one photo at a time ----
 
@@ -645,6 +778,7 @@ async function show(index) {
   state.atEnd = false;
   const photo = state.photos[index];
   els.price.value = photo.price;
+  els.note.value = photo.note;
   render();
   els.strip.children[index]?.scrollIntoView({ block: "nearest", inline: "nearest" });
   els.price.focus();
@@ -667,14 +801,13 @@ function drawPreview() {
     previewQueued = false;
     const photo = state.photos[state.current];
     if (!photo || !state.bitmap) return;
-    const date = dateText();
-    const price = priceText(photo);
-    const logo = await prepare(date, price);
+    const labels = labelsFor(photo);
+    const logo = await prepare(labels);
     // She may have moved to another photo or kept typing while the font loaded: draw only what's current.
     const now = state.photos[state.current];
     if (!now || !state.bitmap) return;
-    if (dateText() !== date || priceText(now) !== price) return drawPreview();
-    composeNow(els.preview, state.bitmap, logo, PREVIEW_EDGE, date, price);
+    if (JSON.stringify(labelsFor(now)) !== JSON.stringify(labels)) return drawPreview();
+    composeNow(els.preview, state.bitmap, logo, PREVIEW_EDGE, labels);
   }, 0);
 }
 
@@ -707,13 +840,29 @@ els.price.addEventListener("keydown", (event) => {
     goNext();
   }
 });
+els.note.addEventListener("input", () => {
+  const photo = state.photos[state.current];
+  if (!photo) return;
+  photo.note = els.note.value;
+  state.saved = false;
+  updateStripItem(photo, state.current);
+  drawPreview();
+});
+els.note.addEventListener("keydown", (event) => {
+  // Enter makes a new line in the message; ⌘ + Enter goes to the next photo.
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+    event.preventDefault();
+    goNext();
+  }
+});
 els.prev.addEventListener("click", () => show(state.current - 1));
 els.next.addEventListener("click", goNext);
 
 function updateStripItem(photo, index) {
   const label = priceText(photo);
+  const note = photo.note.trim() ? " ✎" : "";
   photo.item.classList.toggle("priced", Boolean(label));
-  photo.item.querySelector(".mini").textContent = label ? `✓ ${label}` : `${index + 1}`;
+  photo.item.querySelector(".mini").textContent = (label ? `✓ ${label}` : `${index + 1}`) + note;
 }
 
 // IMG_1234.HEIC -> IMG_1234-watermarked.jpg; repeats get (2), (3)...
@@ -733,10 +882,9 @@ function objectUrl(blob) {
 
 // ---- Saving ----
 
-// Draws every photo at full size with the current date and its price, then saves.
+// Draws every photo at full size with the current date, its price and its message, then saves.
 els.save.addEventListener("click", async () => {
   const photos = [...state.photos];
-  const date = dateText();
   const outputs = [];
   state.saving = { done: 0, total: photos.length };
   render();
@@ -744,7 +892,7 @@ els.save.addEventListener("click", async () => {
     const canvas = document.createElement("canvas");
     for (const photo of photos) {
       const bitmap = await createImageBitmap(photo.clean);
-      await compose(canvas, bitmap, MAX_EDGE, date, priceText(photo));
+      await compose(canvas, bitmap, MAX_EDGE, labelsFor(photo));
       bitmap.close();
       outputs.push({ name: photo.name, blob: await toJpeg(canvas, JPEG_QUALITY) });
       state.saving.done++;
@@ -803,6 +951,7 @@ els.reset.addEventListener("click", () => {
   els.strip.replaceChildren();
   els.date.value = "";
   els.price.value = "";
+  els.note.value = "";
   els.preview.width = els.preview.height = 0;
   els.work.hidden = true;
   els.start.hidden = false;
@@ -836,7 +985,7 @@ function render() {
   document.body.classList.toggle("editing", !els.work.hidden);
   els.counter.textContent = count ? `Ảnh ${current + 1} / ${count}` : "";
   els.prev.disabled = current <= 0;
-  els.next.disabled = els.price.disabled = !count;
+  els.next.disabled = els.price.disabled = els.note.disabled = !count;
   [...els.strip.children].forEach((item, i) => {
     item.firstChild.setAttribute("aria-current", String(i === current));
   });
